@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
 import type { IPet } from "../../../types/pet";
 import { PET_STATUS_OPTIONS } from "../constant/pet.constant";
-import { usePetContext } from "../context/PetContext";
 import { StatusBadge } from "./StatusBadge";
 
 interface IPetFormProps {
   initialPet: IPet;
-  onSaved?: (pet: IPet) => void;
+  onSubmit: (pet: IPet) => Promise<void>;
+  submitLabel?: string;
 }
 
-export function PetForm({ initialPet, onSaved }: IPetFormProps) {
-  const { savePet, loading, error } = usePetContext();
+export function PetForm({ initialPet, onSubmit, submitLabel = "Simpan" }: IPetFormProps) {
   const [form, setForm] = useState<IPet>(initialPet);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setForm(initialPet);
@@ -19,8 +20,15 @@ export function PetForm({ initialPet, onSaved }: IPetFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await savePet(form);
-    onSaved?.(form);
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit(form);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyimpan pet");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -63,8 +71,8 @@ export function PetForm({ initialPet, onSaved }: IPetFormProps) {
       {form.status && <div>Preview: <StatusBadge status={form.status} /></div>}
       {error && <p style={{ color: "#ef4444" }}>{error}</p>}
 
-      <button type="submit" disabled={loading}>
-        {loading ? "Menyimpan..." : "Simpan Pet"}
+      <button type="submit" disabled={submitting}>
+        {submitting ? "Menyimpan..." : submitLabel}
       </button>
     </form>
   );
