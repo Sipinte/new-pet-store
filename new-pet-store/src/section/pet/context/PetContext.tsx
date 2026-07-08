@@ -1,13 +1,19 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
-import type { IPet, IUpdatePetPayload } from "../../../types/pet";
-import { getPetById, updatePet as updatePetApi } from "../utils/pet-utils";
+import type { IPet, IUpdatePetPayload, IStatus } from "../../../types/pet";
+import {
+  getPetById,
+  updatePet as updatePetApi,
+  findPetsByStatus,
+} from "../utils/pet-utils";
 
 interface IPetContextValue {
   pet: IPet | null;
+  pets: IPet[];
   loading: boolean;
   error: string | null;
   fetchPet: (id: number) => Promise<void>;
+  fetchPetsByStatus: (status: IStatus) => Promise<void>;
   savePet: (payload: IUpdatePetPayload) => Promise<void>;
 }
 
@@ -15,6 +21,7 @@ const PetContext = createContext<IPetContextValue | undefined>(undefined);
 
 export function PetProvider({ children }: { children: ReactNode }) {
   const [pet, setPet] = useState<IPet | null>(null);
+  const [pets, setPets] = useState<IPet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +33,19 @@ export function PetProvider({ children }: { children: ReactNode }) {
       setPet(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengambil data pet");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchPetsByStatus = useCallback(async (status: IStatus) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await findPetsByStatus(status);
+      setPets(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengambil daftar pet");
     } finally {
       setLoading(false);
     }
@@ -46,7 +66,9 @@ export function PetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <PetContext.Provider value={{ pet, loading, error, fetchPet, savePet }}>
+    <PetContext.Provider
+      value={{ pet, pets, loading, error, fetchPet, fetchPetsByStatus, savePet }}
+    >
       {children}
     </PetContext.Provider>
   );
