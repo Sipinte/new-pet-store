@@ -1,11 +1,12 @@
-import { PetDetailPage } from "./pages/PetDetailPage";
+import { BrowserRouter } from "react-router-dom";
+import { AppRoutes } from "./routes/AppRoutes";
 import "./App.css";
 
 function App() {
   return (
-    <div className="app">
-      <PetDetailPage petId={1} />
-    </div>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 
